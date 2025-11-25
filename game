@@ -1,0 +1,71 @@
+import React, { useState, useEffect } from 'react';
+import MainMenu from './components/MainMenu';
+import GameOver from './components/GameOver';
+import PinballGame from './components/PinballGame';
+import { GameState } from './types';
+
+function App() {
+  const [gameState, setGameState] = useState<GameState>(GameState.MENU);
+  const [score, setScore] = useState(0);
+  const [bestScore, setBestScore] = useState(0);
+
+  useEffect(() => {
+    const savedBest = localStorage.getItem('multiball_best_score');
+    if (savedBest) {
+      setBestScore(parseInt(savedBest, 10));
+    }
+  }, []);
+
+  const handleStart = () => {
+    setScore(0);
+    setGameState(GameState.PLAYING);
+  };
+
+  const handleScoreUpdate = (newScore: number) => {
+    setScore(newScore);
+  };
+
+  const handleGameOver = (finalScore: number) => {
+    if (finalScore > bestScore) {
+      setBestScore(finalScore);
+      localStorage.setItem('multiball_best_score', finalScore.toString());
+    }
+    setScore(finalScore);
+    setGameState(GameState.GAME_OVER);
+  };
+
+  const handleRestart = () => {
+    setGameState(GameState.MENU);
+  };
+
+  return (
+    <div className="relative w-full h-screen bg-black flex items-center justify-center overflow-hidden">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900 via-gray-900 to-black"></div>
+      
+      {/* Game State Management */}
+      {gameState === GameState.MENU && (
+        <MainMenu onStart={handleStart} bestScore={bestScore} />
+      )}
+      
+      {gameState === GameState.PLAYING && (
+        <>
+          {/* Score Header */}
+          <div className="absolute top-0 left-0 right-0 z-40 flex justify-center pt-4 pointer-events-none">
+             <div className="bg-green-500 text-white px-8 py-2 rounded-b-xl shadow-lg border-2 border-green-700">
+                <span className="text-2xl font-display tracking-widest">{score.toLocaleString()}</span>
+             </div>
+          </div>
+          
+          <PinballGame onGameOver={handleGameOver} onScoreUpdate={handleScoreUpdate} />
+        </>
+      )}
+
+      {gameState === GameState.GAME_OVER && (
+        <GameOver score={score} bestScore={bestScore} onRestart={handleRestart} />
+      )}
+    </div>
+  );
+}
+
+export default App;
